@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class MLP(nn.Module):
-    pass
-
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
@@ -46,7 +43,6 @@ class CNN(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(1000, 196),
-            # nn.ReLU()
         )
 
     def forward(self, x):
@@ -59,6 +55,21 @@ class CNN(nn.Module):
         out = self.linear_part(out)
         return torch.sigmoid(out)
 
-
-
-
+    
+class CordConv1d(torch.nn.Module):
+    def __init__(self, dim, *args, **kwargs):
+        super(CordConv1d, self).__init__()
+        self.dim = dim
+        args = list(args)
+        args[0]+=1
+        args = tuple(args)
+        self.conv = nn.Conv1d(*args, **kwargs)
+    def forward(self, x):
+        batch_size = x.shape[0]
+        x_range = torch.arange(0,self.dim).repeat(batch_size,1)
+        x_range = x_range[:,None,:]
+        x_channel = x_range.float()/(self.dim-1)
+        x_channel = x_channel*2-1
+        out = torch.cat((x, x_channel),1)
+        out = self.conv(out)
+        return out
