@@ -12,7 +12,7 @@ from numba import jit
 from statsmodels.robust import mad
 
 class ECG_dataset(Dataset):
-    def __init__(self, path_to_DataFile, cycle_lenght, type_of_wave, is_train=True, seed=10, transform=None):
+    def __init__(self, path_to_DataFile, cycle_lenght, type_of_wave, is_train=True, transform=None):
         ''' 
         Class for custom dataset for ecg signals
         '''
@@ -21,34 +21,33 @@ class ECG_dataset(Dataset):
         self.transform = transform
         self.otvedenie = 'i'
         self.keys, self.procent_of_train = list(self.data_dict.keys()), 0.8
-        rd.seed(seed) # set a seed
+        self.count_data = len(self.keys)
+        rd.seed(10) # set a seed for taking random peaks
         self.cycle_lenght = cycle_lenght
         self.type_of_wave = type_of_wave
         self.is_train = is_train
 
-    def __len__(self):
         if self.is_train:
-            return int(len(self.keys)*self.procent_of_train)
+            self.len = int(self.count_data*self.procent_of_train)
+            self.keys_for_get_item = self.keys
         else:
-            max_index = int(len(self.keys)*(1-self.procent_of_train))+1
-            self.keys = self.keys[len(self.keys)-1:len(self.keys)-max_index-1:-1] #bugs here
-            return max_index
+            self.len = int(self.count_data*(1-self.procent_of_train))+1
+            self.keys_for_get_item = self.keys[self.count_data-1:self.count_data-self.len-1:-1]
+
+    def __len__(self):
+            return self.len
     
     def __getitem__(self, index):
         if self.is_train:
             if self.type_of_wave == 'p':
                 if index in [11, 12, 29, 40, 60, 61, 63, 76, 88, 89, 94, 95, 96, 108, 112, 141, 154]:
                     index = 1
-            # if self.type_of_wave == 't':
-            #     if index in [18, 63]:
-            #         index+=2
         else:
             if self.type_of_wave == 'p':
                 if index in [1, 27, 30, 39]:
                     index-=1
 
-        print('index is', index)
-        leads = self.data_dict[self.keys[index]]['Leads']
+        leads = self.data_dict[self.keys_for_get_item[index]]['Leads']
         signal = leads[self.otvedenie]["Signal"]
         labels = [ (tmp['Index'],tmp['Name'])  for tmp in leads[self.otvedenie]['Morphology'][self.type_of_wave] if tmp['Name']!='xtd_point' ]
         peaks_idx = [ tmp['Index']  for tmp in leads[self.otvedenie]['Morphology']['qrs'] if tmp['Name']=='r' ]
@@ -57,9 +56,9 @@ class ECG_dataset(Dataset):
         # peaks_idx.sort()
         # if len(peaks_idx)>=3:
         #     peaks_idx = peaks_idx[1:-1] # remove edgest peaks
-        print(labels)
-        print()
-        print(peaks_idx)
+        # print(labels)
+        # print()
+        # print(peaks_idx)
         peak = rd.sample(peaks_idx, 1)[0] # take a random peak
         label = get_label(peak, labels, self.cycle_lenght)
 
@@ -67,7 +66,6 @@ class ECG_dataset(Dataset):
         while (peak-self.cycle_lenght<0) or (peak+self.cycle_lenght>len(signal)) or label is None: # resave the peak if index out of range or label None
             peak = rd.sample(peaks_idx, 1)[0] # take a random peak
             label = get_label(peak, labels, self.cycle_lenght)
-            print(label)
             lol+=1
             if lol==30:
                 print('break(((')
@@ -75,7 +73,6 @@ class ECG_dataset(Dataset):
 
         res = signal[peak-self.cycle_lenght:peak+self.cycle_lenght]
         sample = (np.array(res), label)
-
         if self.transform:
             sample = self.transform(sample)
         
@@ -140,3 +137,45 @@ def wavelet_smooth(X, wavelet="db4", level=1, title=None):
     coeff[1:] = (pywt.threshold(i, value=uthresh, mode="soft") for i in coeff[1:])
     y = pywt.waverec(coeff, wavelet, mode="per")
     return y
+
+
+def visualize_out(model, dataloader, device):
+    inputs, targets = next(iter(dataloader))
+    inputs, targets = inputs.to(device), targets.to(device)
+    model.eval()
+    with torch.no_grad():
+        outputs = model(inputs)
+    inputs, targets, outputs = inputs.cpu().numpy(), targets.cpu().numpy(), outputs.cpu().numpy()
+    size, indx = len(targets[0]), 0
+    count = int(mt.sqrt(targets.shape[0])) 
+    fig, ax = plt.subplots(count, count)
+    for i in range(count):
+        for j in range(count):
+            if indx < targets.shape[0] and i*count+j < count**2:
+                ax[i][j].plot(inputs[indx])
+                ax[i][j].scatter(targets[indx], [0]*size, c='g')
+                ax[i][j].scatter(outputs[indx], [0]*size, c='r')
+                indx+=1
+
+    plt.show()
+
+
+class ToTensor(object):
+    """Convert ndarrays in sample to Tensors."""
+
+    def __call__(self, sample):
+        array, target = sample
+        return (torch.from_numpy(array).float(), torch.from_numpy(target).float())
+
+class ToChoise(object):
+    def __init__(self, index=0):
+        self.index = index
+    """Convert ndarrays in sample to Tensors."""
+
+    def __call__(self, sample):
+        array, target = sample
+        target = np.array([target[self.index]])
+        return (torch.from_numpy(array).float(), torch.from_numpy(target).float())
+
+def get_transforms():
+    return (ToChoise(1), ToChoise(1)) 

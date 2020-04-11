@@ -2,58 +2,39 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.l1 = nn.Sequential(
-            nn.Conv1d(12, 32, kernel_size=3, padding=1),
-            nn.BatchNorm1d(32),
-            nn.MaxPool1d(kernel_size=4),
+class MLP(nn.Module):
+    def __init__(self, **kwargs):
+        super(MLP, self).__init__()
+        if  'input_size' not in kwargs.keys():
+            kwargs['input_size'] = 512
+        if  'output_size' not in kwargs.keys():
+            kwargs['output_size'] = 1
+
+        self.layer1 = nn.Sequential(
+            nn.Linear(kwargs['input_size'], 300),
+            nn.BatchNorm1d(300),
             nn.ReLU()
         )
-        self.l2 = nn.Sequential(
-            nn.Conv1d(32,64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
-            nn.MaxPool1d(kernel_size=2),
+        self.layer2 = nn.Sequential(
+            nn.Linear(300,100),
+            nn.BatchNorm1d(100),
             nn.ReLU()
-        )
-        self.l3 = nn.Sequential(
-            nn.Conv1d(64,128, kernel_size=3, padding=1),
-            nn.BatchNorm1d(128),
-            nn.MaxPool1d(kernel_size=2),
-            nn.ReLU()
-        )
-        self.l4 = nn.Sequential(
-            nn.Conv1d(128,64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
-            nn.MaxPool1d(kernel_size=2),
-            nn.ReLU()
-        )
-        self.l5 = nn.Sequential(
-            nn.Conv1d(64,64,kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
-            nn.MaxPool1d(kernel_size=2),
-            nn.ReLU()
-        )
-        self.linear_part = nn.Sequential(
-            nn.Linear(64*78, 4096),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(4096,1000),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(1000, 196),
         )
 
+        self.layer3 = nn.Sequential(
+            nn.Linear(100,20),
+            nn.BatchNorm1d(20),
+            nn.ReLU()
+        )
+        self.output = nn.Linear(20, kwargs['output_size'])
+    
     def forward(self, x):
-        out = self.l1(x)
-        out = self.l2(out)
-        out = self.l3(out)
-        out = self.l4(out)
-        out = self.l5(out)
-        out = out.view(out.size(0),-1)
-        out = self.linear_part(out)
-        return torch.sigmoid(out)
+        out = x.view(x.shape[0],-1)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        return self.output(out)
+        
 
     
 class CordConv1d(torch.nn.Module):
