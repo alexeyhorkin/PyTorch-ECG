@@ -1,3 +1,4 @@
+import os
 import torch
 import utils
 import argparse
@@ -5,7 +6,7 @@ import models
 import numpy as np
 import math as mt
 from dataset import get_dataset
-from utils import visualize_out, get_transforms
+from utils import visualize_out, get_transforms, plot_learning
 
 def evaluate(model, test_dataloader, device, criterior):
     test_loss = 0.0
@@ -28,6 +29,7 @@ def test(args, model, device):
     test_loss = evaluate(model, test_dataset, device, criterior)
     print(f'Test loss is {test_loss/len(test_dataset):.5f}')
     visualize_out(model, test_dataset, device)
+    plot_learning(os.path.join('Current_exp', 'metrics', 'metrics_learning.pickle'))
 
 if  __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -37,7 +39,7 @@ if  __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=2, help='Count workers for data loading')
     parser.add_argument('--snapshot_path', type=str, default='lol.pth', help='Path to data file')
     parser.add_argument('--path_to_DataFile', type=str, default='fix_data.json', help='Path to data file')
-    parser.add_argument('--cycle_length', type=int, default=250, help='Size of data = 2*cycle_length')
+    parser.add_argument('--cycle_length', type=int, default=256, help='Size of data = 2*cycle_length')
     args = parser.parse_args()
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

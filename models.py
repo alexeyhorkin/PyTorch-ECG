@@ -34,7 +34,40 @@ class MLP(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         return self.output(out)
-        
+    
+class CNN(nn.Module):
+    def __init__(self, **kwargs):
+        super(CNN, self).__init__()
+        if  'output_size' not in kwargs.keys():
+            kwargs['output_size'] = 1
+
+        self.layer1 = nn.Sequential(
+            nn.Conv1d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
+        )
+        self.layer2 = nn.Sequential(
+            nn.Conv1d(32 ,64, kernel_size=3, padding=1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
+        )        
+        self.layer3 = nn.Sequential(
+            nn.Conv1d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
+        )
+
+        self.output = nn.Linear(64*64, kwargs['output_size'])
+    
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = out.view(out.shape[0],-1)
+        return self.output(out)
 
     
 class CordConv1d(torch.nn.Module):

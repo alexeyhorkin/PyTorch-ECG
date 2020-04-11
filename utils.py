@@ -2,6 +2,7 @@ import os
 import torch
 import json
 import pywt
+import pickle
 import numpy as np
 import random as rd
 import math as mt
@@ -146,6 +147,7 @@ def visualize_out(model, dataloader, device):
     with torch.no_grad():
         outputs = model(inputs)
     inputs, targets, outputs = inputs.cpu().numpy(), targets.cpu().numpy(), outputs.cpu().numpy()
+    inputs = inputs.reshape(inputs.shape[0],-1)
     size, indx = len(targets[0]), 0
     count = int(mt.sqrt(targets.shape[0])) 
     fig, ax = plt.subplots(count, count)
@@ -165,7 +167,8 @@ class ToTensor(object):
 
     def __call__(self, sample):
         array, target = sample
-        return (torch.from_numpy(array).float(), torch.from_numpy(target).float())
+        array, target = np.array(array[None,:]), np.array(target) 
+        return (torch.from_numpy(array).float(), torch.from_numpy(target).float()) #[batch_size, 1, size_of_data] and [batch_size, size_of_data] 
 
 class ToChoise(object):
     def __init__(self, index=0):
@@ -174,8 +177,28 @@ class ToChoise(object):
 
     def __call__(self, sample):
         array, target = sample
-        target = np.array([target[self.index]])
-        return (torch.from_numpy(array).float(), torch.from_numpy(target).float())
+        array, target = np.array(array[None,:]), np.array([target[self.index]])
+        return (torch.from_numpy(array).float(), torch.from_numpy(target).float()) #[batch_size, 1, size_of_data] and [batch_size, size_of_data]
 
 def get_transforms():
     return (ToChoise(1), ToChoise(1)) 
+
+def plot_learning(path_to_data):
+    ms=3
+    with open(path_to_data, 'rb') as f:
+        data_dict = pickle.load(f)
+        keys = list(data_dict.keys())
+    plt.title('Learning graphs')
+    plt.subplot(2,1,1)
+
+    plt.plot(range(1,len(data_dict[keys[1]])+1), data_dict[keys[1]], marker='o', ms=ms)
+    plt.plot(range(1,len(data_dict[keys[1]])+1), data_dict[keys[2]], marker='o', ms=ms)
+    plt.xlabel('epoches')
+    plt.ylabel('loss')
+    plt.legend(['Train loss', 'Test loss'], loc='upper left')
+    plt.subplot(2,1,2)
+    plt.plot(range(1,len(data_dict[keys[0]])+1)[::6], data_dict[keys[0]][::6], marker='o', ms=ms)
+    plt.xlabel('number of mini-batch')
+    plt.ylabel('loss')
+    plt.legend(['Train loss on batch'], loc='upper left')
+    plt.show()
