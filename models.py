@@ -88,3 +88,4 @@ class CordConv1d(torch.nn.Module):
         out = torch.cat((x, x_channel),1)
         out = self.conv(out)
         return out
+        
