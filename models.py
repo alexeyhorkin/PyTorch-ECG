@@ -77,10 +77,11 @@ class CordConv1d(torch.nn.Module):
         args = list(args)
         args[0]+=1
         args = tuple(args)
+        self.register_buffer('x_range',torch.arange(0,self.dim))
         self.conv = nn.Conv1d(*args, **kwargs)
     def forward(self, x):
         batch_size = x.shape[0]
-        x_range = torch.arange(0,self.dim).repeat(batch_size,1)
+        x_range = self.x_range.repeat(batch_size,1)
         x_range = x_range[:,None,:]
         x_channel = x_range.float()/(self.dim-1)
         x_channel = x_channel*2-1
