@@ -181,7 +181,7 @@ class ToChoise(object):
         return (torch.from_numpy(array).float(), torch.from_numpy(target).float()) #[batch_size, 1, size_of_data] and [batch_size, size_of_data]
 
 def get_transforms():
-    return (ToChoise(1), ToChoise(1)) 
+    return (ToTensor(), ToTensor()) 
 
 def plot_learning(path_to_data):
     ms=3

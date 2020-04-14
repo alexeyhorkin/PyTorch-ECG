@@ -65,16 +65,16 @@ if  __name__ == '__main__':
     parser.add_argument('--is_shuffle', type=bool, default=False, help='Shuffle train or not')
     parser.add_argument('--path_to_DataFile', type=str, default='fix_data.json', help='Path to data file')
     parser.add_argument('--save_path', type=str, default='Current_exp', help='Path to save models during training')
-    parser.add_argument('--save_every', type=int, default=30, help='Save every # epoches')
+    parser.add_argument('--save_every', type=int, default=10, help='Save every # epoches')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--eph', type=int, default=2, help='Count of epoches')
+    parser.add_argument('--eph', type=int, default=100, help='Count of epoches')
     parser.add_argument('--cycle_length', type=int, default=256, help='Size of data = 2*cycle_length')
     parser.add_argument('--md_type', type=str, choices=['MLP', 'CNN'], required=True, help='Name of model to train')
 
     args = parser.parse_args()
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = getattr(models, args.md_type)(input_size=args.cycle_length*2, output_size=1).to(device)
+    model = getattr(models, args.md_type)(input_size=args.cycle_length*2, output_size=3).to(device)
     print(model)
     main(args, model, device)
 

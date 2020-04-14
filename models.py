@@ -43,6 +43,7 @@ class CNN(nn.Module):
 
         self.layer1 = nn.Sequential(
             nn.Conv1d(1, 32, kernel_size=3, padding=1),
+            # CordConv1d(512, 1, 32, kernel_size=3, padding=1),
             nn.BatchNorm1d(32),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)

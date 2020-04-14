@@ -29,7 +29,6 @@ def test(args, model, device):
     test_loss = evaluate(model, test_dataset, device, criterior)
     print(f'Test loss is {test_loss/len(test_dataset):.5f}')
     visualize_out(model, test_dataset, device)
-    plot_learning(os.path.join('Current_exp', 'metrics', 'metrics_learning.pickle'))
 
 if  __name__ == '__main__':
     parser = argparse.ArgumentParser()
