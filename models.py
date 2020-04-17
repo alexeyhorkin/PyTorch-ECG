@@ -11,28 +11,21 @@ class MLP(nn.Module):
             kwargs['output_size'] = 1
 
         self.layer1 = nn.Sequential(
-            nn.Linear(kwargs['input_size'], 300),
-            nn.BatchNorm1d(300),
-            nn.ReLU()
-        )
-        self.layer2 = nn.Sequential(
-            nn.Linear(300,100),
-            nn.BatchNorm1d(100),
-            nn.ReLU()
-        )
-
-        self.layer3 = nn.Sequential(
-            nn.Linear(100,20),
+            nn.Linear(kwargs['input_size'], 20),
             nn.BatchNorm1d(20),
             nn.ReLU()
         )
-        self.output = nn.Linear(20, kwargs['output_size'])
+        self.layer2 = nn.Sequential(
+            nn.Linear(20,5),
+            nn.BatchNorm1d(5),
+            nn.ReLU()
+        )
+        self.output = nn.Linear(5, kwargs['output_size'])
     
     def forward(self, x):
         out = x.view(x.shape[0],-1)
         out = self.layer1(out)
         out = self.layer2(out)
-        out = self.layer3(out)
         return self.output(out)
     
 class CNN(nn.Module):
@@ -40,35 +33,34 @@ class CNN(nn.Module):
         super(CNN, self).__init__()
         if  'output_size' not in kwargs.keys():
             kwargs['output_size'] = 1
+        if  'input_size' not in kwargs.keys():
+            kwargs['input_size'] = 300
 
         self.layer1 = nn.Sequential(
-            nn.Conv1d(1, 32, kernel_size=3, padding=1),
-            # CordConv1d(512, 1, 32, kernel_size=3, padding=1),
-            nn.BatchNorm1d(32),
+            nn.BatchNorm1d(1),
+            # nn.Conv1d(1, 32, kernel_size=3, padding=1),
+            CordConv1d(kwargs['input_size'], 1, 16, kernel_size=100, padding=1),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )
         self.layer2 = nn.Sequential(
-            nn.Conv1d(32 ,64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
+            # nn.Conv1d(16 ,16, kernel_size=40, padding=1),
+            CordConv1d(114, 16, 16, kernel_size=100, padding=1),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )        
-        self.layer3 = nn.Sequential(
-            nn.Conv1d(64, 64, kernel_size=3, padding=1),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2)
-        )
 
-        self.output = nn.Linear(64*64, kwargs['output_size'])
+        self.avg_pool = nn.AdaptiveAvgPool1d(output_size=1) 
+        self.classifier = nn.Linear(16, kwargs['output_size'])
     
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer2(out)
-        out = self.layer3(out)
+        out = self.avg_pool(out)
         out = out.view(out.shape[0],-1)
-        return self.output(out)
+        return self.classifier(out)
 
     
 class CordConv1d(torch.nn.Module):

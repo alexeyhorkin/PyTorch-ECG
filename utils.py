@@ -50,29 +50,26 @@ class ECG_dataset(Dataset):
 
         leads = self.data_dict[self.keys_for_get_item[index]]['Leads']
         signal = leads[self.otvedenie]["Signal"]
-        labels = [ (tmp['Index'],tmp['Name'])  for tmp in leads[self.otvedenie]['Morphology'][self.type_of_wave] if tmp['Name']!='xtd_point' ]
+        labels = [ (tmp['Index'],tmp['Name'])  for tmp in leads[self.otvedenie]['Morphology'][self.type_of_wave] if tmp['Name'] not in ['xtd_point', 'q', 's'] ]
         peaks_idx = [ tmp['Index']  for tmp in leads[self.otvedenie]['Morphology']['qrs'] if tmp['Name']=='r' ]
-        # x_fltr = wavelet_smooth(signal, wavelet="db4", level=1, title=None)
-        # peaks_idx = find_peaks_div(x_fltr)
-        # peaks_idx.sort()
-        # if len(peaks_idx)>=3:
-        #     peaks_idx = peaks_idx[1:-1] # remove edgest peaks
-        # print(labels)
-        # print()
-        # print(peaks_idx)
         peak = rd.sample(peaks_idx, 1)[0] # take a random peak
-        label = get_label(peak, labels, self.cycle_lenght)
+        label = get_label(peak, labels, self.cycle_lenght, self.type_of_wave)
 
         lol = 0
         while (peak-self.cycle_lenght<0) or (peak+self.cycle_lenght>len(signal)) or label is None: # resave the peak if index out of range or label None
             peak = rd.sample(peaks_idx, 1)[0] # take a random peak
-            label = get_label(peak, labels, self.cycle_lenght)
+            label = get_label(peak, labels, self.cycle_lenght, self.type_of_wave)
             lol+=1
             if lol==30:
                 print('break(((')
                 break
 
-        res = signal[peak-self.cycle_lenght:peak+self.cycle_lenght]
+        # print('peak is ', peak)
+        if self.is_train:
+            res = signal[peak-self.cycle_lenght:peak+self.cycle_lenght+ 70]
+        else:
+            res = signal[peak-self.cycle_lenght-70:peak+self.cycle_lenght]
+            label +=70
         sample = (np.array(res), label)
         if self.transform:
             sample = self.transform(sample)
@@ -81,9 +78,8 @@ class ECG_dataset(Dataset):
 
 
 
-def get_label(peak, labels, lenght):
+def get_label(peak, labels, lenght, type_wave):
     indexes_labels = np.array([i[0] for i in labels])
-    type_wave = labels[0][1][0]
     idx = (np.abs(indexes_labels-peak)).argmin()
     if type_wave =='t':
         if peak>labels[idx][0] or idx+2>len(labels)-1 or labels[idx][1]!='t_onset':
@@ -93,6 +89,10 @@ def get_label(peak, labels, lenght):
         if peak<labels[idx][0] or idx-2<0 or labels[idx][1]!='p_offset':
             return None
         return np.array([labels[idx][0] - peak, labels[idx-1][0]-peak, labels[idx-2][0] - peak])+lenght
+    if type_wave =='qrs':
+        if labels[idx][1]!='r':
+            return None
+        return np.array([labels[idx-1][0] - peak, labels[idx][0]-peak, labels[idx+1][0] - peak])+lenght    
 
 def find_peaks_div(x, scope_max=10, scope_null=50):
     lenght = x.shape[0]
@@ -140,8 +140,28 @@ def wavelet_smooth(X, wavelet="db4", level=1, title=None):
     return y
 
 
-def visualize_out(model, dataloader, device):
-    inputs, targets = next(iter(dataloader))
+def visualize_out(model, test_dataloader, train_dataloader,  device):
+    inputs, targets = next(iter(test_dataloader))
+    inputs, targets = inputs.to(device), targets.to(device)
+    model.eval()
+    with torch.no_grad():
+        outputs = model(inputs)
+    inputs, targets, outputs = inputs.cpu().numpy(), targets.cpu().numpy(), outputs.cpu().numpy()
+    inputs = inputs.reshape(inputs.shape[0],-1)
+    size, indx = len(targets[0]), 0
+    count = int(mt.sqrt(targets.shape[0])) 
+    fig, ax = plt.subplots(count, count)
+    for i in range(count):
+        for j in range(count):
+            if indx < targets.shape[0] and i*count+j < count**2:
+                ax[i][j].plot(inputs[indx])
+                ax[i][j].scatter(targets[indx], [0]*size, c='g')
+                ax[i][j].scatter(outputs[indx], [0]*size, c='r')
+                indx+=1
+
+    plt.show()
+
+    inputs, targets = next(iter(train_dataloader))
     inputs, targets = inputs.to(device), targets.to(device)
     model.eval()
     with torch.no_grad():
@@ -181,7 +201,7 @@ class ToChoise(object):
         return (torch.from_numpy(array).float(), torch.from_numpy(target).float()) #[batch_size, 1, size_of_data] and [batch_size, size_of_data]
 
 def get_transforms():
-    return (ToTensor(), ToTensor()) 
+    return (ToChoise(1), ToChoise(1)) 
 
 def plot_learning(path_to_data):
     ms=3
