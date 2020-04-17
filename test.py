@@ -40,7 +40,7 @@ if  __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=2, help='Count workers for data loading')
     parser.add_argument('--snapshot_path', type=str, default='lol.pth', help='Path to data file')
     parser.add_argument('--path_to_DataFile', type=str, default='fix_data.json', help='Path to data file')
-    parser.add_argument('--cycle_length', type=int, default=128, help='Size of data = 2*cycle_length')
+    parser.add_argument('--cycle_length', type=int, default=80, help='Size of data = 2*cycle_length')
     args = parser.parse_args()
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

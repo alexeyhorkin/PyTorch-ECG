@@ -65,11 +65,14 @@ class ECG_dataset(Dataset):
                 break
 
         # print('peak is ', peak)
+        step = int(30*rd.random())
+        shift = 30 - step
         if self.is_train:
-            res = signal[peak-self.cycle_lenght:peak+self.cycle_lenght+ 70]
+            res = signal[peak-self.cycle_lenght- shift:peak+self.cycle_lenght+ 80 + step]
+            label+=shift
         else:
-            res = signal[peak-self.cycle_lenght-70:peak+self.cycle_lenght]
-            label +=70
+            res = signal[peak-self.cycle_lenght-80 -step:peak+self.cycle_lenght + shift]
+            label +=step + 80
         sample = (np.array(res), label)
         if self.transform:
             sample = self.transform(sample)

@@ -39,14 +39,14 @@ class CNN(nn.Module):
         self.layer1 = nn.Sequential(
             nn.BatchNorm1d(1),
             # nn.Conv1d(1, 32, kernel_size=3, padding=1),
-            CordConv1d(kwargs['input_size'], 1, 16, kernel_size=100, padding=1),
+            CordConv1d(kwargs['input_size'], 1, 16, kernel_size=40, padding=1),
             nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )
         self.layer2 = nn.Sequential(
-            # nn.Conv1d(16 ,16, kernel_size=40, padding=1),
-            CordConv1d(114, 16, 16, kernel_size=100, padding=1),
+            nn.Conv1d(16 ,16, kernel_size=30, padding=1),
+            # CordConv1d(116, 16, 16, kernel_size=30, padding=1),
             nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
