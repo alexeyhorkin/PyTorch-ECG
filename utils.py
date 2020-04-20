@@ -250,12 +250,12 @@ class Peaks_dataset(Dataset):
     
     def __getitem__(self, index):
         arr = np.zeros(self.size)
-        step = int(30*rd.random())
+        step = int(120*rd.random())
         index_middle = (self.size-1)//2
         if self.is_train:
-            index_peak = index_middle - 80 - step
+            index_peak = index_middle - 10 - step
         else:
-            index_peak = index_middle + 80 + step
+            index_peak = index_middle + 10 + step
         arr[index_peak]=self.amplitude
         sample = (arr ,index_peak)
         if self.transform:
