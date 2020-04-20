@@ -7,8 +7,8 @@ import pickle
 import torch.nn as nn
 import matplotlib.pyplot as plt 
 import numpy as np
-from dataset import get_dataset
-from utils import get_transforms
+from dataset import get_dataset, get_dataset_peaks
+from utils import get_transforms, get_transforms_for_dataset_peaks
 
 def train(model, device, args, optimazer, criterior, train_dataset, test_dataset):
     torch.manual_seed(12)
@@ -49,8 +49,8 @@ def train(model, device, args, optimazer, criterior, train_dataset, test_dataset
 
 def main(args, model, device):
     torch.manual_seed(12)
-    train_transform, test_transform = get_transforms()
-    train_dataset, test_dataset = get_dataset(args, train_transform, test_transform)
+    train_transform, test_transform = get_transforms_for_dataset_peaks()
+    train_dataset, test_dataset = get_dataset_peaks(args, train_transform, test_transform)
     optimazer = torch.optim.Adam(model.parameters(), lr=args.lr)
     criterior = nn.MSELoss()
     train(model, device, args, optimazer, criterior, train_dataset, test_dataset)
@@ -68,13 +68,13 @@ if  __name__ == '__main__':
     parser.add_argument('--save_every', type=int, default=10, help='Save every # epoches')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--eph', type=int, default=100, help='Count of epoches')
-    parser.add_argument('--cycle_length', type=int, default=80, help='Size of data = 2*cycle_length')
+    parser.add_argument('--cycle_length', type=int, default=270, help='Size of data = 2*cycle_length')
     parser.add_argument('--md_type', type=str, choices=['MLP', 'CNN'], required=True, help='Name of model to train')
 
     args = parser.parse_args()
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = getattr(models, args.md_type)(input_size=args.cycle_length*2 + 110, output_size=1).to(device)
+    model = getattr(models, args.md_type)(input_size=args.cycle_length, output_size=1).to(device)
     print(model)
     main(args, model, device)
 

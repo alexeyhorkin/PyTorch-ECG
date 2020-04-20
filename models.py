@@ -11,16 +11,16 @@ class MLP(nn.Module):
             kwargs['output_size'] = 1
 
         self.layer1 = nn.Sequential(
-            nn.Linear(kwargs['input_size'], 20),
-            nn.BatchNorm1d(20),
+            nn.Linear(kwargs['input_size'], 70),
+            nn.BatchNorm1d(70),
             nn.ReLU()
         )
         self.layer2 = nn.Sequential(
-            nn.Linear(20,5),
-            nn.BatchNorm1d(5),
+            nn.Linear(70,20),
+            nn.BatchNorm1d(20),
             nn.ReLU()
         )
-        self.output = nn.Linear(5, kwargs['output_size'])
+        self.output = nn.Linear(20, kwargs['output_size'])
     
     def forward(self, x):
         out = x.view(x.shape[0],-1)
@@ -70,7 +70,7 @@ class CordConv1d(torch.nn.Module):
         args = list(args)
         args[0]+=1
         args = tuple(args)
-        self.register_buffer('x_range',torch.arange(0,self.dim))
+        self.register_buffer('x_range', torch.arange(0,self.dim))
         self.conv = nn.Conv1d(*args, **kwargs)
     def forward(self, x):
         batch_size = x.shape[0]

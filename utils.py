@@ -144,7 +144,7 @@ def wavelet_smooth(X, wavelet="db4", level=1, title=None):
 
 
 def visualize_out(model, test_dataloader, train_dataloader,  device):
-    inputs, targets = next(iter(test_dataloader))
+    inputs, targets = next(iter(train_dataloader))
     inputs, targets = inputs.to(device), targets.to(device)
     model.eval()
     with torch.no_grad():
@@ -164,7 +164,7 @@ def visualize_out(model, test_dataloader, train_dataloader,  device):
 
     plt.show()
 
-    inputs, targets = next(iter(train_dataloader))
+    inputs, targets = next(iter(test_dataloader))
     inputs, targets = inputs.to(device), targets.to(device)
     model.eval()
     with torch.no_grad():
@@ -190,7 +190,7 @@ class ToTensor(object):
 
     def __call__(self, sample):
         array, target = sample
-        array, target = np.array(array[None,:]), np.array(target) 
+        array, target = np.array(array[None,:]), np.array([target]) 
         return (torch.from_numpy(array).float(), torch.from_numpy(target).float()) #[batch_size, 1, size_of_data] and [batch_size, size_of_data] 
 
 class ToChoise(object):
@@ -205,6 +205,10 @@ class ToChoise(object):
 
 def get_transforms():
     return (ToChoise(1), ToChoise(1)) 
+
+def get_transforms_for_dataset_peaks():
+    return (ToTensor(), ToTensor()) 
+
 
 def plot_learning(path_to_data):
     ms=3
@@ -225,3 +229,36 @@ def plot_learning(path_to_data):
     plt.ylabel('loss')
     plt.legend(['Train loss on batch'], loc='upper left')
     plt.show()
+
+class Peaks_dataset(Dataset):
+    def __init__(self, size, is_train=True, transform=None):
+        ''' 
+        Class for custom dataset for ecg signals
+        '''
+        self.transform = transform
+        self.procent_of_train = 0.8
+        rd.seed(10) # set a seed for taking random peaks
+        self.size = size
+        self.is_train = is_train
+        self.amplitude = 100.0
+        if self.is_train: self.len = 160
+        else: self.len = 40
+
+
+    def __len__(self):
+            return self.len
+    
+    def __getitem__(self, index):
+        arr = np.zeros(self.size)
+        step = int(30*rd.random())
+        index_middle = (self.size-1)//2
+        if self.is_train:
+            index_peak = index_middle - 80 - step
+        else:
+            index_peak = index_middle + 80 + step
+        arr[index_peak]=self.amplitude
+        sample = (arr ,index_peak)
+        if self.transform:
+            sample = self.transform(sample)
+        
+        return sample 
