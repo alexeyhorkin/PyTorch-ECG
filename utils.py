@@ -249,7 +249,8 @@ class Peaks_dataset(Dataset):
             return self.len
     
     def __getitem__(self, index):
-        arr = np.zeros(self.size)
+        # arr  = np.random.uniform(low=0, high=10, size=(self.size,))
+        arr  = np.zeros(self.size)
         step = int(120*rd.random())
         index_middle = (self.size-1)//2
         if self.is_train:

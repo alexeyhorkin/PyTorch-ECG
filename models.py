@@ -27,7 +27,9 @@ class MLP(nn.Module):
         out = self.layer1(out)
         out = self.layer2(out)
         return self.output(out)
-    
+
+
+
 class CNN(nn.Module):
     def __init__(self, **kwargs):
         super(CNN, self).__init__()
@@ -36,31 +38,46 @@ class CNN(nn.Module):
         if  'input_size' not in kwargs.keys():
             kwargs['input_size'] = 300
 
+
+        self.BN = nn.BatchNorm1d(1)
         self.layer1 = nn.Sequential(
-            nn.BatchNorm1d(1),
-            nn.Conv1d(1, 16, kernel_size=40, padding=1),
-            # CordConv1d(kwargs['input_size'], 1, 16, kernel_size=40, padding=1),
-            nn.BatchNorm1d(16),
+            CordConv1d(kwargs['input_size'], 1, 8, kernel_size=1, padding=0, bias=False),
+            nn.BatchNorm1d(8),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )
         self.layer2 = nn.Sequential(
-            nn.Conv1d(16 ,16, kernel_size=30, padding=1),
-            # CordConv1d(116, 16, 16, kernel_size=30, padding=1),
+            nn.Conv1d(8, 16, kernel_size=1, padding=0, bias=False),
             nn.BatchNorm1d(16),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
-        )        
+        )
+        self.layer3 = nn.Sequential(
+            nn.Conv1d(16, 32, kernel_size=30, padding=0, bias=False),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
+        )
+        self.layer4 = nn.Sequential(
+            nn.Conv1d(32, 64 , kernel_size=10, padding=0, bias=False),
+            nn.ReLU()
+        )
+        self.layer5 = nn.Sequential(
+            nn.Conv1d(64, 1 , kernel_size=3, padding=0, bias=False),
+            nn.ReLU()
+        )
+        self.classifier = nn.AdaptiveAvgPool1d(output_size=1)
 
-        self.avg_pool = nn.AdaptiveAvgPool1d(output_size=1) 
-        self.classifier = nn.Linear(16, kwargs['output_size'])
-    
     def forward(self, x):
-        out = self.layer1(x)
+        out = self.BN(x)
+        out = self.layer1(out)
         out = self.layer2(out)
-        out = self.avg_pool(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = self.layer5(out)
+        out = self.classifier(out)
         out = out.view(out.shape[0],-1)
-        return self.classifier(out)
+        return out
 
     
 class CordConv1d(torch.nn.Module):
