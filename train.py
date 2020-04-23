@@ -8,7 +8,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt 
 import numpy as np
 from dataset import get_dataset, get_dataset_peaks
-from utils import get_transforms, get_transforms_for_dataset_peaks
+from utils import get_transforms, get_transforms_for_dataset_peaks, L2
 
 def train(model, device, args, optimazer, criterior, train_dataset, test_dataset):
     torch.manual_seed(12)
@@ -51,7 +51,7 @@ def main(args, model, device):
     torch.manual_seed(12)
     train_transform, test_transform = get_transforms_for_dataset_peaks()
     train_dataset, test_dataset = get_dataset_peaks(args, train_transform, test_transform)
-    optimazer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimazer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=0.0005)
     criterior = nn.MSELoss()
     train(model, device, args, optimazer, criterior, train_dataset, test_dataset)
 
@@ -59,17 +59,17 @@ def main(args, model, device):
 
 if  __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train_batch_size', type=int, default=20, help='Size of batch during training')
+    parser.add_argument('--train_batch_size', type=int, default=10, help='Size of batch during training')
     parser.add_argument('--test_batch_size', type=int, default=40, help='Size of batch during testing')
     parser.add_argument('--num_workers', type=int, default=0, help='Count workers for data loading')
     parser.add_argument('--is_shuffle', type=bool, default=False, help='Shuffle train or not')
     parser.add_argument('--path_to_DataFile', type=str, default='fix_data.json', help='Path to data file')
     parser.add_argument('--save_path', type=str, default='Current_exp', help='Path to save models during training')
     parser.add_argument('--save_every', type=int, default=10, help='Save every # epoches')
-    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=0.005, help='Learning rate')
     parser.add_argument('--eph', type=int, default=100, help='Count of epoches')
     parser.add_argument('--cycle_length', type=int, default=270, help='Size of data = 2*cycle_length')
-    parser.add_argument('--md_type', type=str, choices=['MLP', 'CNN'], required=True, help='Name of model to train')
+    parser.add_argument('--md_type', type=str, choices=['CNN_cord', 'CNN'], required=True, help='Name of model to train')
 
     args = parser.parse_args()
     

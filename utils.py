@@ -12,6 +12,14 @@ from torchvision import transforms, utils
 from numba import jit
 from statsmodels.robust import mad
 
+
+def L2(parameters, device):
+    l2 = torch.tensor(0.).to(device)
+    l = torch.tensor(0.01).to(device)
+    for param in parameters:
+        l2+=torch.norm(param)
+    return l*l2
+
 class ECG_dataset(Dataset):
     def __init__(self, path_to_DataFile, cycle_lenght, type_of_wave, is_train=True, transform=None):
         ''' 
@@ -240,7 +248,7 @@ class Peaks_dataset(Dataset):
         rd.seed(10) # set a seed for taking random peaks
         self.size = size
         self.is_train = is_train
-        self.amplitude = 100.0
+        self.amplitude = 100
         if self.is_train: self.len = 160
         else: self.len = 40
 
@@ -262,4 +270,4 @@ class Peaks_dataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
         
-        return sample 
+        return sample
